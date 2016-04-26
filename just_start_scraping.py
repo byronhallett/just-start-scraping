@@ -4,13 +4,16 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import requests
 import getpass
+import csv
+import pytz
 
 
 class Race:
 
-    def __init__(self, *, location, time,
+    def __init__(self, *, location, date, time,
                  runners=[], stars_present=False):
         self.location = location
+        self.date = date
         self.time = time
         self.runners = runners[:]
         self.stars_present = stars_present
@@ -21,7 +24,7 @@ class Race:
 
 class Runner:
     def __init__(self, *, name="", stars=0, mov1, np):
-        self.name = name
+        self.name = str(name).replace('*', '')
         self.stars = stars
         self.mov1 = mov1
         self.np = np
@@ -32,6 +35,7 @@ class JustStartSraping:
     # Constants
     minute = 60
     idle_mins = minute * 10
+    tz = pytz.timezone('Europe/London')
 
     def __init__(self,
                  login_url="http://www.juststarthere.co.uk/user/login.html",
@@ -42,7 +46,9 @@ class JustStartSraping:
                  scrape_url=("http://www.juststarthere" +
                              ".co.uk/upcomingraces.html"),
                  time_url="http://free.timeanddate.com/clock/i253rdyo/n136",
-                 table_name="race_table"):
+                 table_name="race_table",
+                 mov1_min=0.85,
+                 np_max=2):
         self.login_url = login_url
         self.user_field = user_field
         self.pass_field = pass_field
@@ -51,6 +57,8 @@ class JustStartSraping:
         self.scrape_url = scrape_url
         self.time_url = time_url
         self.table_name = table_name
+        self.mov1_min = mov1_min
+        self.np_max = np_max
 
         # Page specific data
         self.scraped_races = []
@@ -66,11 +74,9 @@ class JustStartSraping:
     def sign_in(self):
         try:
             user = input('enter username: ')
-            if user == "":
-                user = "***REMOVED***"
+            user = "***REMOVED***"
             password = getpass.getpass('enter password: ')
-            if password == "":
-                password = "***REMOVED***"
+            password = "***REMOVED***"
         except:
             print("Bad credentials")
             return False
@@ -93,8 +99,8 @@ class JustStartSraping:
         self.session.post(self.login_url, data=self.login_data)
 
     def scrape_loop(self):
-        print("Fetching data...")
         while True:
+            print("Fetching data...")
             current_races = self.get_races()
             if current_races == []:
                 print("No races, checking in {} minute(s)"
@@ -107,12 +113,13 @@ class JustStartSraping:
                                         current_races))
             if len(starred_races) > 0:
                 print("new starred race(s) found, outputting to csv")
-                output_races(starred_races)
+                self.output_races(starred_races)
             non_starred = list(filter(lambda r: r.stars_present is False,
                                       current_races))
-            current_server_time = self.get_time()
+            self.current_server_time = self.get_time()
             # print(current_server_time)
-            self.next_jump = min([(race.time - current_server_time).seconds
+            self.next_jump = min([(
+                race.time - self.current_server_time).seconds
                                   for race in non_starred])
             if self.next_jump < 60:
                 next_wait = 0
@@ -131,6 +138,9 @@ class JustStartSraping:
             headers=dict(referer=self.scrape_url)
         )
         page_data = BeautifulSoup(result.content, 'html.parser')
+        # file = open('data.txt','r')
+        # page_data = BeautifulSoup(file, 'html.parser')
+        # file.close()
         race_table = page_data.find(id=self.table_name)
         table_body = race_table.tbody
         table_rows = table_body.find_all('tr')
@@ -140,8 +150,8 @@ class JustStartSraping:
         races = []
 
         # Store last data for debugging
-        with open('data.txt', 'w') as f:
-            f.write(race_table)
+        # with open('data.txt', 'w') as f:
+        #     f.write(race_table.prettify())
 
         # print(race_table.thead)
         # print(race_table.thead.find_all('th'))
@@ -156,8 +166,10 @@ class JustStartSraping:
             if self.is_race_info(row):
                 race_index += 1
                 info = row.td.string.split(',')
+                # print(info)
                 time_string = info[2].replace(" ", "")
-                this_race = Race(location=info[0:1],
+                this_race = Race(location=info[1][1:],
+                                 date=datetime.now(self.tz).date(),
                                  time=datetime.strptime(time_string, '%H:%M'))
                 # if (last_race.time - datetime.now()).seconds < 0:
                 #     last_race.time += timedelta(days=1)
@@ -165,48 +177,53 @@ class JustStartSraping:
                 continue
             if self.is_horse_info(row):
                 h_data = row.find_all('td')
-                h_name = h_data[name_index]
+                h_name = h_data[name_index].string
                 h_stars = h_data[star_index]
-                h_mov1 = h_data[mov1_index]
-                h_np = h_data[np_index]
-                this_runner = Runner(name=h_name, stars=h_stars,
+                h_mov1 = float(h_data[mov1_index].string)
+                h_np = int(h_data[np_index].string)
+                star_count = self.stars_to_int(h_stars)
+                if star_count > 0:
+                    races[race_index].stars_present = True
+                this_runner = Runner(name=h_name, stars=star_count,
                                      mov1=h_mov1, np=h_np)
                 races[race_index].add_runner(this_runner)
-                try:
-                    if int(h_stars) > 0:
-                        races[race_index].stars_present = True
-                except:
-                    pass
-                    # Nothing wrong, just no stars
         return races
 
     def output_races(self, races):
         for race in races:
-            best_mov1 = max([runner.mov1 for runner in race.runners])
+            best_mov = self.best_mov1(race.runners)
             # Save all categories
             sorted_runners = {
                 'JSH FIVESTARS TBE.csv':
                 list(filter(lambda r: r.stars == 5, race.runners)),
                 'JSH NOSTARS TBE.csv':
-                list(filter(lambda r: r.stars == 0 and 0 <= r.np <= 2,
+                list(filter(lambda r: r.stars == 0 and
+                            0 <= r.np <= self.np_max,
                             race.runners)),
                 'JSH MOV1 TBE.csv':
-                list(filter(lambda r: r.stars == 0 and r.mov1 == best_mov1,
+                list(filter(lambda r: r.mov1 == best_mov and
+                            r.mov1 >= self.mov1_min,
                             race.runners))
                 }
-            for sheet, runs in sorted_runners:
+            for sheet, runs in sorted_runners.items():
                 with open(sheet, 'a') as file:
                     for r in runs:
-                        csv_row = [datetime.now(),
-                                   ":".join(race.time.hours,
-                                            race.time.minutes),
-                                   race.location,
-                                   r.name]
-                        file.write(csv_row)
+                        csv_writer = csv.writer(file)
+                        csv_writer.writerow(
+                            [race.date,
+                             ":".join([str(race.time.hour),
+                                      str(race.time.minute)]),
+                             race.location,
+                             r.name])
                 print('race: {}, {}:{}, added to CSVs'.format(
-                    race.location, race.time.hours, race.time.minutes
+                    race.location, race.time.hour, race.time.minute
                 ))
-            scraped_races.append(race)
+            self.scraped_races.append(race)
+
+    def best_mov1(self, runners):
+        movs = [r.mov1 for r in runners]
+        return max(movs)
+
 
     def is_race_info(self, row):
         try:
@@ -219,6 +236,17 @@ class JustStartSraping:
             return 'runner' in row.find_all('td')[2]['class']
         except:
             return False
+
+    def stars_to_int(self, stars):
+        try:
+            img = stars.img['src']
+            name = img.replace('.gif', '')
+            # print(name)
+            count = name.replace('/beta/images/rank/', '')
+            # print(count)
+            return int(count)
+        except:
+            return 0
 
     def get_time(self):
         time_page = requests.get(self.time_url)
