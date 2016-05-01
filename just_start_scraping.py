@@ -1,11 +1,11 @@
 from threading import Timer
 from time import sleep
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
-import requests
 import getpass
 import csv
 import pytz
+import requests
+from bs4 import BeautifulSoup
 
 
 class Race:
@@ -23,10 +23,11 @@ class Race:
 
 
 class Runner:
-    def __init__(self, *, name="", stars=0, mov1, np):
+    def __init__(self, *, name="", stars=0, mov1, min1, np):
         self.name = str(name).replace('*', '')
         self.stars = stars
         self.mov1 = mov1
+        self.min1 = min1
         self.np = np
 
 
@@ -34,7 +35,7 @@ class JustStartSraping:
 
     # Constants
     minute = 60
-    idle_mins = minute * 10
+    idle_mins = minute * 20
     tz = pytz.timezone('Europe/London')
 
     def __init__(self,
@@ -48,6 +49,7 @@ class JustStartSraping:
                  time_url="http://free.timeanddate.com/clock/i253rdyo/n136",
                  table_name="race_table",
                  mov1_min=0.85,
+                 min1_range=[10.5, 75]
                  np_max=2):
         self.login_url = login_url
         self.user_field = user_field
@@ -100,6 +102,7 @@ class JustStartSraping:
 
     def scrape_loop(self):
         while True:
+            self.re_sign_in()
             print("Fetching data...")
             current_races = self.get_races()
             if current_races == []:
@@ -156,6 +159,7 @@ class JustStartSraping:
         # print(race_table.thead)
         # print(race_table.thead.find_all('th'))
         # Headers for easy index on horses rows
+        min1_index = 17
         mov1_index = 18
         name_index = 21
         np_index = 23
@@ -179,13 +183,15 @@ class JustStartSraping:
                 h_data = row.find_all('td')
                 h_name = h_data[name_index].string
                 h_stars = h_data[star_index]
+                h_min1 = float(h_data[min1_index].string)
                 h_mov1 = float(h_data[mov1_index].string)
                 h_np = int(h_data[np_index].string)
                 star_count = self.stars_to_int(h_stars)
                 if star_count > 0:
                     races[race_index].stars_present = True
                 this_runner = Runner(name=h_name, stars=star_count,
-                                     mov1=h_mov1, np=h_np)
+                                     mov1=h_mov1, min1=h_min1,
+                                     np=h_np)
                 races[race_index].add_runner(this_runner)
         return races
 
@@ -203,6 +209,11 @@ class JustStartSraping:
                 'JSH MOV1 TBE.csv':
                 list(filter(lambda r: r.mov1 == best_mov and
                             r.mov1 >= self.mov1_min,
+                            race.runners)),
+                'JSH MOV1 ODDS TBE.csv':
+                list(filter(lambda r: r.mov1 == best_mov and
+                            r.mov1 >= self.mov1_min and
+                            self.min1_range[0] <= r.min1 <= self.min1_range[1],
                             race.runners))
                 }
             for sheet, runs in sorted_runners.items():
@@ -210,7 +221,7 @@ class JustStartSraping:
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
-                            [race.date,
+                            [race.date.strftime("%d/%m/%y"),
                              ":".join([str(race.time.hour),
                                       str(race.time.minute)]),
                              race.location,
@@ -223,7 +234,6 @@ class JustStartSraping:
     def best_mov1(self, runners):
         movs = [r.mov1 for r in runners]
         return max(movs)
-
 
     def is_race_info(self, row):
         try:
@@ -257,6 +267,6 @@ class JustStartSraping:
 
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    # import doctest
+    # doctest.testmod()
     JustStartSraping().start()
