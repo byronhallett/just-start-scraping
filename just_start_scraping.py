@@ -127,7 +127,7 @@ class JustStartSraping:
             if self.next_jump < 60:
                 next_wait = 0
             else:
-                next_wait = min([self.next_jump-59, self.idle_mins])
+                next_wait = min([self.next_jump-59.9, self.idle_mins])
             print("Next jump in {:.2f} minutes, waiting {:.2f} minutes".format(
                 self.next_jump / 60,
                 next_wait / 60))
@@ -204,6 +204,14 @@ class JustStartSraping:
                 list(filter(lambda r: r.stars == 5, race.runners)),
                 'JSH NOSTARS TBE.csv':
                 list(filter(lambda r: r.stars == 0 and
+                            0 <= r.np <= self.np_max,
+                            race.runners)),
+                'JSH ONESTAR TBE.csv':
+                list(filter(lambda r: r.stars == 1 and
+                            0 <= r.np <= self.np_max,
+                            race.runners)),
+                'JSH 01STAR TBE.csv':
+                list(filter(lambda r: (r.stars == 0 or r.stars == 1) and
                             0 <= r.np <= self.np_max,
                             race.runners)),
                 'JSH MOV1 TBE.csv':
