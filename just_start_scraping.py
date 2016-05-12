@@ -67,8 +67,6 @@ class JustStartSraping:
         self.next_jump = None
 
     def start(self):
-        with open('text.txt', 'w') as file:
-            file.write('tested')
         print("Starting scrape.")
         if not self.sign_in():
             print('sign_in_error')
@@ -225,7 +223,7 @@ class JustStartSraping:
                             race.runners))
                 }
             for sheet, runs in sorted_runners.items():
-                with open(sheet, 'a') as file:
+                with open(''.join('output/', sheet), 'a') as file:
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
