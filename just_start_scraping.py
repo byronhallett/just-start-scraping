@@ -1,8 +1,8 @@
-from threading import Timer
 from time import sleep
 from datetime import datetime, timedelta
 import getpass
 import csv
+# Extras
 import pytz
 import requests
 from bs4 import BeautifulSoup
@@ -49,7 +49,7 @@ class JustStartSraping:
                  time_url="http://free.timeanddate.com/clock/i253rdyo/n136",
                  table_name="race_table",
                  mov1_min=0.85,
-                 min1_range=[10.5, 75]
+                 min1_range=[10.5, 75],
                  np_max=2):
         self.login_url = login_url
         self.user_field = user_field
@@ -67,6 +67,8 @@ class JustStartSraping:
         self.next_jump = None
 
     def start(self):
+        with open('text.txt', 'w') as file:
+            file.write('tested')
         print("Starting scrape.")
         if not self.sign_in():
             print('sign_in_error')
