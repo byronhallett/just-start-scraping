@@ -76,9 +76,7 @@ class JustStartSraping:
     def sign_in(self):
         try:
             user = input('enter username: ')
-            user = "***REMOVED***"
             password = getpass.getpass('enter password: ')
-            password = "***REMOVED***"
         except:
             print("Bad credentials")
             return False
