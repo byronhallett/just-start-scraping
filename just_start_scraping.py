@@ -78,10 +78,8 @@ class JustStartSraping:
 
     def sign_in(self):
         try:
-            # user = input('enter username: ')
-            user = 'stephenjgray'
-            # password = getpass.getpass('enter password: ')
-            password = 'splinter'
+            user = input('enter username: ')
+            password = getpass.getpass('enter password: ')
         except:
             print("Bad credentials")
             return False
