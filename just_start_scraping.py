@@ -1,11 +1,14 @@
 from time import sleep
 from datetime import datetime, timedelta
+from pathlib import Path
 import getpass
 import csv
 # Extras
 import pytz
 import requests
 from bs4 import BeautifulSoup
+# this app
+from setup import *
 
 
 class Race:
@@ -223,7 +226,8 @@ class JustStartSraping:
                             race.runners))
                 }
             for sheet, runs in sorted_runners.items():
-                with open(''.join('output/', sheet), 'a') as file:
+                outpath = Settings.out_dir / sheet
+                with outpath.open('a') as file:
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
