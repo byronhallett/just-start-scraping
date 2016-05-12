@@ -11,7 +11,9 @@ Type:
 
 iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
 
+#### install git
+choco install git
 #### install python3.5.1
-choco python
+choco install python
 #### run just_start_scraping.py using idle3
 
