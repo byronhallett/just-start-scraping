@@ -103,7 +103,7 @@ class JustStartSraping:
 
     def scrape_loop(self):
         while True:
-            try:
+            # try:
                 self.re_sign_in()
                 print("Fetching data...")
                 current_races = self.get_races()
@@ -135,10 +135,10 @@ class JustStartSraping:
                         self.next_jump / 60,
                         next_wait / 60))
                 sleep(next_wait)
-            except:
-                print('some error occured, during main scrape.')
-                print('Trying in 5 minutes.')
-                sleep(5*60)
+            # except:
+            #     print('some error occured, during main scrape.')
+            #     print('Trying in 5 minutes.')
+            #     sleep(5*60)
 
 
     def get_races(self):
@@ -216,6 +216,12 @@ class JustStartSraping:
                 'JSH ONESTAR TBE.csv':
                 list(filter(lambda r: r.stars == 1 and
                             0 <= r.np <= self.np_max,
+                            race.runners)),
+                'ONESTAR.csv':
+                list(filter(lambda r: r.stars == 1,
+                            race.runners)),
+                'NOSTARS.csv':
+                list(filter(lambda r: r.stars == 0,
                             race.runners)),
                 'JSH 01STAR TBE.csv':
                 list(filter(lambda r: (r.stars == 0 or r.stars == 1) and
