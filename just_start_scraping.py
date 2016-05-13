@@ -52,8 +52,7 @@ class JustStartSraping:
                  time_url="http://free.timeanddate.com/clock/i253rdyo/n136",
                  table_name="race_table",
                  mov1_min=0.85,
-                 min1_range=[10.5, 75],
-                 np_max=2):
+                 min1_range=[10.5, 75]):
         self.login_url = login_url
         self.user_field = user_field
         self.pass_field = pass_field
@@ -63,7 +62,6 @@ class JustStartSraping:
         self.time_url = time_url
         self.table_name = table_name
         self.mov1_min = mov1_min
-        self.np_max = np_max
 
         # Page specific data
         self.scraped_races = []
@@ -201,15 +199,11 @@ class JustStartSraping:
             best_mov = self.best_mov1(race.runners)
             # Save all categories
             sorted_runners = {
-                'JSH FIVESTARS TBE.csv':
+                'FIVESTARS.csv':
                 list(filter(lambda r: r.stars == 5, race.runners)),
-                'JSH NOSTARS TBE.csv':
+                'NOSTARS 0-2NP.csv':
                 list(filter(lambda r: r.stars == 0 and
-                            0 <= r.np <= self.np_max,
-                            race.runners)),
-                'JSH ONESTAR TBE.csv':
-                list(filter(lambda r: r.stars == 1 and
-                            0 <= r.np <= self.np_max,
+                            0 <= r.np <= 2,
                             race.runners)),
                 'ONESTAR.csv':
                 list(filter(lambda r: r.stars == 1,
@@ -217,18 +211,9 @@ class JustStartSraping:
                 'NOSTARS.csv':
                 list(filter(lambda r: r.stars == 0,
                             race.runners)),
-                'JSH 01STAR TBE.csv':
-                list(filter(lambda r: (r.stars == 0 or r.stars == 1) and
-                            0 <= r.np <= self.np_max,
-                            race.runners)),
-                'JSH MOV1 TBE.csv':
+                'MOV1.csv':
                 list(filter(lambda r: r.mov1 == best_mov and
                             r.mov1 >= self.mov1_min,
-                            race.runners)),
-                'JSH MOV1 ODDS TBE.csv':
-                list(filter(lambda r: r.mov1 == best_mov and
-                            r.mov1 >= self.mov1_min and
-                            self.min1_range[0] <= r.min1 <= self.min1_range[1],
                             race.runners))
                 }
             for sheet, runs in sorted_runners.items():
