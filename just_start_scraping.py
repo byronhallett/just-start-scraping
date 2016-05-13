@@ -167,6 +167,7 @@ class JustStartSraping:
         name_index = 21
         np_index = 23
         star_index = 24
+        runner_index = 3
 
         race_index = -1
         for row in table_rows:
@@ -189,11 +190,12 @@ class JustStartSraping:
                 h_mov1 = float(h_data[mov1_index].string)
                 h_min1 = float(h_data[min1_index].find_all('div')[0].string)
                 h_np = int(h_data[np_index].string)
+                h_run_td = h_data[runner_index]['class']
                 star_count = self.stars_to_int(h_stars)
                 if star_count > 0:
                     races[race_index].stars_present = True
                 h_running = True
-                if "(NR)" in h_name:
+                if "non-runner" in h_run_td:
                     h_running = False
                 this_runner = Runner(name=h_name, stars=star_count,
                                      mov1=h_mov1, min1=h_min1,
