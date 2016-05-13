@@ -103,43 +103,37 @@ class JustStartSraping:
 
     def scrape_loop(self):
         while True:
-            # try:
-                self.re_sign_in()
-                print("Fetching data...")
-                current_races = self.get_races()
-                if current_races == []:
-                    print("No races, checking in {} minute(s)"
-                          .format(self.idle_mins / 60))
-                    sleep(self.idle_mins)
-                    # self.re_sign_in()
-                    continue
-                # print(list(len(rac.runners) for rac in current_races))
-                starred_races = list(filter(lambda r: r.stars_present,
-                                            current_races))
-                if len(starred_races) > 0:
-                    print("new starred race(s) found, outputting to csv")
-                    self.output_races(starred_races)
-                non_starred = list(filter(lambda r: r.stars_present is False,
-                                          current_races))
-                self.current_server_time = self.get_time()
-                # print(current_server_time)
-                self.next_jump = min([(
-                    race.time - self.current_server_time).seconds
-                                      for race in non_starred])
-                if self.next_jump < 60:
-                    next_wait = 0
-                else:
-                    next_wait = min([self.next_jump-59.9, self.idle_mins])
-                print("Next jump in {:.2f} minutes, waiting {:.2f} minutes"
-                      .format(
-                        self.next_jump / 60,
-                        next_wait / 60))
-                sleep(next_wait)
-            # except:
-            #     print('some error occured, during main scrape.')
-            #     print('Trying in 5 minutes.')
-            #     sleep(5*60)
-
+            self.re_sign_in()
+            print("Fetching data...")
+            current_races = self.get_races()
+            if current_races == []:
+                print("No races, checking in {} minute(s)"
+                      .format(self.idle_mins / 60))
+                sleep(self.idle_mins)
+                # self.re_sign_in()
+                continue
+            # print(list(len(rac.runners) for rac in current_races))
+            starred_races = list(filter(lambda r: r.stars_present,
+                                        current_races))
+            if len(starred_races) > 0:
+                print("new starred race(s) found, outputting to csv")
+                self.output_races(starred_races)
+            non_starred = list(filter(lambda r: r.stars_present is False,
+                                      current_races))
+            self.current_server_time = self.get_time()
+            # print(current_server_time)
+            self.next_jump = min([(
+                race.time - self.current_server_time).seconds
+                                  for race in non_starred])
+            if self.next_jump < 60:
+                next_wait = 0
+            else:
+                next_wait = min([self.next_jump-59.9, self.idle_mins])
+            print("Next jump in {:.2f} minutes, waiting {:.2f} minutes"
+                  .format(
+                    self.next_jump / 60,
+                    next_wait / 60))
+            sleep(next_wait)
 
     def get_races(self):
         # print(list(self.session.cookies))
