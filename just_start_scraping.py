@@ -24,14 +24,18 @@ class Race:
     def add_runner(self, runner):
         self.runners.append(runner)
 
+    def get_runners(self):
+        return [run for run in self.runners if run.running]
+
 
 class Runner:
-    def __init__(self, *, name="", stars=0, mov1, min1, np):
+    def __init__(self, *, name="", stars=0, mov1, min1, np, running):
         self.name = str(name).replace('*', '')
         self.stars = stars
         self.mov1 = mov1
         self.min1 = min1
         self.np = np
+        self.running = running
 
 
 class JustStartSraping:
@@ -188,33 +192,36 @@ class JustStartSraping:
                 star_count = self.stars_to_int(h_stars)
                 if star_count > 0:
                     races[race_index].stars_present = True
+                h_running = True
+                if "(NR)" in h_name:
+                    h_running = False
                 this_runner = Runner(name=h_name, stars=star_count,
                                      mov1=h_mov1, min1=h_min1,
-                                     np=h_np)
+                                     np=h_np, running=h_running)
                 races[race_index].add_runner(this_runner)
         return races
 
     def output_races(self, races):
         for race in races:
-            best_mov = self.best_mov1(race.runners)
+            best_mov = self.best_mov1(race.get_runners())
             # Save all categories
             sorted_runners = {
                 'FIVESTARS.csv':
-                list(filter(lambda r: r.stars == 5, race.runners)),
+                list(filter(lambda r: r.stars == 5, race.get_runners())),
                 'NOSTARS 0-2NP.csv':
                 list(filter(lambda r: r.stars == 0 and
                             0 <= r.np <= 2,
-                            race.runners)),
+                            race.get_runners())),
                 'ONESTAR.csv':
                 list(filter(lambda r: r.stars == 1,
-                            race.runners)),
+                            race.get_runners())),
                 'NOSTARS.csv':
                 list(filter(lambda r: r.stars == 0,
-                            race.runners)),
+                            race.get_runners())),
                 'MOV1.csv':
                 list(filter(lambda r: r.mov1 == best_mov and
                             r.mov1 >= self.mov1_min,
-                            race.runners))
+                            race.get_runners()))
                 }
             for sheet, runs in sorted_runners.items():
                 outpath = Settings.out_dir / sheet
@@ -223,13 +230,12 @@ class JustStartSraping:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
                             [race.date.strftime("%d/%m/%y"),
-                             ":".join([str(race.time.hour),
-                                      str(race.time.minute)]),
+                             race.time.strftime("%H:%M"),
                              race.location,
                              r.name])
-                print('race: {}, {}:{}, added to CSVs'.format(
-                    race.location, race.time.hour, race.time.minute
-                ))
+            print('race: {}, {}:{}, added to CSVs'.format(
+                race.location, race.time.hour, race.time.minute
+            ))
             self.scraped_races.append(race)
 
     def best_mov1(self, runners):
