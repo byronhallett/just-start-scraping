@@ -190,7 +190,7 @@ class JustStartSraping:
                 h_mov1 = float(h_data[mov1_index].string)
                 h_min1 = float(h_data[min1_index].find_all('div')[0].string)
                 h_np = int(h_data[np_index].string)
-                h_run_td = h_data[runner_index]['class']
+                h_run_td = h_data[runner_index].find_all('div')[0]['class']
                 star_count = self.stars_to_int(h_stars)
                 if star_count > 0:
                     races[race_index].stars_present = True
