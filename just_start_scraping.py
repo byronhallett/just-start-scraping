@@ -233,7 +233,7 @@ class JustStartSraping:
                 }
             for sheet, runs in sorted_runners.items():
                 outpath = Settings.out_dir / sheet
-                with outpath.open('a') as file:
+                with outpath.open('a', newline='', encoding='utf8') as file:
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
