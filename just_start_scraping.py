@@ -68,7 +68,6 @@ class JustStartSraping:
         self.mov1_min = mov1_min
 
         # Page specific data
-        self.scraped_races = []
         self.next_jump = None
 
     def start(self):
@@ -81,7 +80,7 @@ class JustStartSraping:
     def sign_in(self):
         try:
             user = input('enter username: ')
-            password = getpass.getpass('enter password: ')
+            password = input('enter password: ')
         except:
             print("Bad credentials")
             return False
@@ -131,7 +130,7 @@ class JustStartSraping:
                 next_wait = 0
             else:
                 next_wait = min([self.next_jump-59.9, self.idle_mins])
-            print("Next jump in {:.2f} minutes, waiting {:.2f} minutes"
+            print("Next race in {:.2f} minutes, waiting {:.2f} minutes"
                   .format(
                     self.next_jump / 60,
                     next_wait / 60))
@@ -238,7 +237,6 @@ class JustStartSraping:
             print('race: {}, {}:{}, added to CSVs'.format(
                 race.location, race.time.hour, race.time.minute
             ))
-            self.scraped_races.append(race)
 
     def best_mov1(self, runners):
         movs = [r.mov1 for r in runners]
