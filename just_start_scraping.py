@@ -122,7 +122,14 @@ class JustStartSraping:
             non_starred = list(filter(lambda r: r.stars_present is False,
                                       current_races))
             self.current_server_time = self.get_time()
-            # print(current_server_time)
+            # Ensure that the only remaining races aren't all starred
+            if non_starred == []:
+                # If they are,  sleep and move to next loop,
+                # Current_races should be empty by then (no problem if not)
+                print("No races further races, checking in {} minute(s)"
+                      .format(self.idle_mins / 60))
+                sleep(self.idle_mins)
+                continue
             self.next_jump = min([(
                 race.time - self.current_server_time).seconds
                                   for race in non_starred])
