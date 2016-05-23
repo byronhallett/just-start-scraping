@@ -251,8 +251,6 @@ class JustStartSraping:
                                     str(outpath)))
                 # now really write
                 with outpath.open('a', newline='', encoding='utf8') as file:
-                    reader = csv.reader(file)
-                    print(reader[-1])
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
