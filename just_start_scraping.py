@@ -210,6 +210,7 @@ class JustStartSraping:
         return races
 
     def output_races(self, races):
+        
         for race in races:
             best_mov = self.best_mov1(race.get_runners())
             # Save all categories
@@ -230,10 +231,28 @@ class JustStartSraping:
                 list(filter(lambda r: r.mov1 == best_mov and
                             r.mov1 >= self.mov1_min,
                             race.get_runners()))
-                }
+                }            
             for sheet, runs in sorted_runners.items():
                 outpath = Settings.out_dir / sheet
+                # Check the output file to make sure the
+                # date hasn't changes since the last row was written
+                if outpath.exists():
+                    with outpath.open('r', newline='', encoding='utf8') as file:
+                        first_date = file.readlines()[-1].split(',')[0]
+                        current_date = race.date.strftime("%d/%m/%y")
+                        if first_date != current_date:
+                            # Must be the next day
+                            # Close file to avoid permission errors
+                            file.close()
+                            try:
+                                outpath.unlink()
+                            except:
+                                print('could not remove {}. It must be in use'.format(
+                                    str(outpath)))
+                # now really write
                 with outpath.open('a', newline='', encoding='utf8') as file:
+                    reader = csv.reader(file)
+                    print(reader[-1])
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
