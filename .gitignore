@@ -1,4 +1,3 @@
-data.txt
 *.csv
 __pycache__/
 *cmd_here*
