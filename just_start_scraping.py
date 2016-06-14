@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 # this app
 from setup import *
+# import pdb
 
 
 class Race:
@@ -27,6 +28,13 @@ class Race:
     def get_runners(self):
         return [run for run in self.runners if run.running]
 
+    def __repr__(self):
+        return "{} {}, stars: {}, horses: {}".format(
+            self.time.strftime('%H:%M'),
+            self.location,
+            self.stars_present,
+            len(self.runners))
+
 
 class Runner:
     def __init__(self, *, name="", stars=0, mov1, min1, np, running):
@@ -36,6 +44,11 @@ class Runner:
         self.min1 = min1
         self.np = np
         self.running = running
+
+    def __repr__(self):
+        return "{} {} {}".format(self.name,
+                                 self.running,
+                                 self.stars)
 
 
 class JustStartSraping:
@@ -51,10 +64,11 @@ class JustStartSraping:
                  pass_field="usr_password",
                  hidden_field="op",
                  hidden_value="login",
-                 scrape_url=("http://www.juststarthere" +
-                             ".co.uk/upcomingraces.html"),
+                 scrape_url=("http://www.juststarthere"
+                             ".co.uk/upcomingwinback.html"),
                  time_url="http://free.timeanddate.com/clock/i253rdyo/n136",
-                 table_name="race_table",
+                 table_name="racedata",
+                 race_info="race_infoback",
                  mov1_min=0.85,
                  min1_range=[10.5, 75]):
         self.login_url = login_url
@@ -66,16 +80,29 @@ class JustStartSraping:
         self.time_url = time_url
         self.table_name = table_name
         self.mov1_min = mov1_min
+        self.race_info = race_info
 
         # Page specific data
         self.next_jump = None
 
     def start(self):
+        if not self.check_outdir():
+            return False
         print("Starting scrape.")
         if not self.sign_in():
             print('sign_in_error')
             return False
         self.scrape_loop()
+
+    def check_outdir(self):
+        test_dir = Settings.out_dir
+        if not test_dir.exists():
+            print("make sure the directory: '{}' exists".format(test_dir),
+                  "or change the settings file")
+            return False
+        return True
+
+
 
     def sign_in(self):
         try:
@@ -149,14 +176,12 @@ class JustStartSraping:
             self.scrape_url,
             headers=dict(referer=self.scrape_url)
         )
-        page_data = BeautifulSoup(result.content, 'html.parser')
-        # file = open('data.txt','r')
-        # page_data = BeautifulSoup(file, 'html.parser')
-        # file.close()
+        # page_data = BeautifulSoup(result.content, 'html.parser')
+        with open('data.html', 'r') as file:
+            page_data = BeautifulSoup(file, 'html.parser')
         race_table = page_data.find(id=self.table_name)
-        table_body = race_table.tbody
-        table_rows = table_body.find_all('tr')
-        if len(table_body) == 0:
+        table_bodies = race_table.find_all('tbody')
+        if len(table_bodies) == 0:
             return []
         print('Data loaded, analysing')
         races = []
@@ -168,49 +193,54 @@ class JustStartSraping:
         # print(race_table.thead)
         # print(race_table.thead.find_all('th'))
         # Headers for easy index on horses rows
-        min1_index = 17
-        mov1_index = 18
-        name_index = 21
-        np_index = 23
-        star_index = 24
-        runner_index = 3
+        min1_index = 15
+        mov1_index = 16
+        name_index = 0
+        # Must break out of info text block, so splitting on literal :
+        # "Horse ID:"
+        name_split = "Horse ID:"
+        np_index = 21
+        star_index = 22
+        runner_index = 1
 
         race_index = -1
-        for row in table_rows:
-            if self.is_race_info(row):
-                race_index += 1
-                info = row.td.string.split(',')
-                # print(info)
-                time_string = info[2].replace(" ", "")
-                this_race = Race(location=info[1][1:],
-                                 date=datetime.now(self.tz).date(),
-                                 time=datetime.strptime(time_string, '%H:%M'))
-                # if (last_race.time - datetime.now()).seconds < 0:
-                #     last_race.time += timedelta(days=1)
-                races.append(this_race)
-                continue
-            if self.is_horse_info(row):
-                h_data = row.find_all('td')
-                h_name = h_data[name_index].string
-                h_stars = h_data[star_index]
-                h_mov1 = float(h_data[mov1_index].string)
-                h_min1 = float(h_data[min1_index].find_all('div')[0].string)
-                h_np = int(h_data[np_index].string)
-                h_run_td = h_data[runner_index].find_all('div')[0]['class']
-                star_count = self.stars_to_int(h_stars)
-                if star_count > 0:
-                    races[race_index].stars_present = True
-                h_running = True
-                if "non-runner" in h_run_td:
-                    h_running = False
-                this_runner = Runner(name=h_name, stars=star_count,
-                                     mov1=h_mov1, min1=h_min1,
-                                     np=h_np, running=h_running)
-                races[race_index].add_runner(this_runner)
+        for table_body in table_bodies:
+            table_rows = table_body.find_all('tr')
+            for row in table_rows:
+                if self.is_race_info(row):
+                    race_index += 1
+                    info = row.td.text.split(',')
+                    time_string, location = info[0].split(' ')[0:2]
+                    this_race = Race(location=location,
+                                     date=datetime.now(self.tz).date(),
+                                     time=datetime.strptime(time_string,
+                                                            '%H:%M'))
+                    # if (last_race.time - datetime.now()).seconds < 0:
+                    #     last_race.time += timedelta(days=1)
+
+                    races.append(this_race)
+                    continue
+                if self.is_horse_info(row):
+                    h_data = row.find_all('td')
+                    h_name = h_data[name_index].text.split(name_split)[0]
+                    h_stars = h_data[star_index]
+                    h_mov1 = float(h_data[mov1_index].string)
+                    h_min1 = float(h_data[min1_index]
+                                   .find_all('div')[0].string)
+                    h_np = int(h_data[np_index].string)
+                    h_run_td = h_data[runner_index].find_all('div')[1]['class']
+                    star_count = self.stars_to_int(h_stars)
+                    if star_count > 0:
+                        races[race_index].stars_present = True
+                    h_running = "rt" not in h_run_td
+                    this_runner = Runner(name=h_name, stars=star_count,
+                                         mov1=h_mov1, min1=h_min1,
+                                         np=h_np, running=h_running)
+                    races[race_index].add_runner(this_runner)
         return races
 
     def output_races(self, races):
-        
+
         for race in races:
             best_mov = self.best_mov1(race.get_runners())
             # Save all categories
@@ -231,14 +261,18 @@ class JustStartSraping:
                 list(filter(lambda r: r.mov1 == best_mov and
                             r.mov1 >= self.mov1_min,
                             race.get_runners()))
-                }            
+                }
             for sheet, runs in sorted_runners.items():
                 outpath = Settings.out_dir / sheet
                 # Check the output file to make sure the
                 # date hasn't changes since the last row was written
                 if outpath.exists():
                     with outpath.open('r', newline='', encoding='utf8') as file:
-                        first_date = file.readlines()[-1].split(',')[0]
+                        lines = file.readlines()
+                        if not lines:
+                            # must be empty
+                            continue
+                        first_date = lines[-1].split(',')[0]
                         current_date = race.date.strftime("%d/%m/%y")
                         if first_date != current_date:
                             # Must be the next day
@@ -251,8 +285,6 @@ class JustStartSraping:
                                     str(outpath)))
                 # now really write
                 with outpath.open('a', newline='', encoding='utf8') as file:
-                    reader = csv.reader(file)
-                    print(reader[-1])
                     for r in runs:
                         csv_writer = csv.writer(file)
                         csv_writer.writerow(
@@ -270,22 +302,22 @@ class JustStartSraping:
 
     def is_race_info(self, row):
         try:
-            return row.td['class'][0] == 'h_race_info'
+            return row.td['class'][0] == self.race_info
         except:
             return False
 
     def is_horse_info(self, row):
         try:
-            return 'runner' in row.find_all('td')[2]['class']
+            return 'runner' in row.find_all('td')[0]['class']
         except:
             return False
 
     def stars_to_int(self, stars):
         try:
             img = stars.img['src']
-            name = img.replace('.gif', '')
+            name = img.replace('t.gif', '')
             # print(name)
-            count = name.replace('/beta/images/rank/', '')
+            count = name.replace('/images/', '')
             # print(count)
             return int(count)
         except:
