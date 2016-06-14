@@ -269,20 +269,18 @@ class JustStartSraping:
                 if outpath.exists():
                     with outpath.open('r', newline='', encoding='utf8') as file:
                         lines = file.readlines()
-                        if not lines:
-                            # must be empty
-                            continue
-                        first_date = lines[-1].split(',')[0]
-                        current_date = race.date.strftime("%d/%m/%y")
-                        if first_date != current_date:
-                            # Must be the next day
-                            # Close file to avoid permission errors
-                            file.close()
-                            try:
-                                outpath.unlink()
-                            except:
-                                print('could not remove {}. It must be in use'.format(
-                                    str(outpath)))
+                        if len(lines) > 0:
+                            first_date = lines[-1].split(',')[0]
+                            current_date = race.date.strftime("%d/%m/%y")
+                            if first_date != current_date:
+                                # Must be the next day
+                                # Close file to avoid permission errors
+                                file.close()
+                                try:
+                                    outpath.unlink()
+                                except:
+                                    print('could not remove {}. It must be in use'.format(
+                                        str(outpath)))
                 # now really write
                 with outpath.open('a', newline='', encoding='utf8') as file:
                     for r in runs:
