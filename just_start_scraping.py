@@ -176,9 +176,9 @@ class JustStartSraping:
             self.scrape_url,
             headers=dict(referer=self.scrape_url)
         )
-        # page_data = BeautifulSoup(result.content, 'html.parser')
-        with open('data.html', 'r') as file:
-            page_data = BeautifulSoup(file, 'html.parser')
+        page_data = BeautifulSoup(result.content, 'html.parser')
+        # with open('data.html', 'r') as file:
+        #     page_data = BeautifulSoup(file, 'html.parser')
         race_table = page_data.find(id=self.table_name)
         table_bodies = race_table.find_all('tbody')
         if len(table_bodies) == 0:
