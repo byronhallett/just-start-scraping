@@ -127,7 +127,20 @@ class JustStartSraping:
         return True
 
     def re_sign_in(self):
-        self.session.post(self.login_url, data=self.login_data)
+        attempts = 0
+        while True
+        try:
+            self.session.post(self.login_url, data=self.login_data)
+            return
+        except requests.ConnectionError:
+            attempts += 1
+            print('server did not respond, trying again in 5 seconds. '
+                  'number of attemmpts: {}'.format(attemps))
+            # Cleaning old session
+            self.session = requests.session()
+            sleep(5)
+            continue
+
 
     def scrape_loop(self):
         while True:
