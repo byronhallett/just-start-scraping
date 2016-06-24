@@ -135,7 +135,7 @@ class JustStartSraping:
             except requests.ConnectionError:
                 attempts += 1
                 print('server did not respond, trying again in 5 seconds. '
-                      'number of attemmpts: {}'.format(attemps))
+                      'number of attempts: {}'.format(attempts))
                 # Cleaning old session
                 self.session = requests.session()
                 sleep(5)
