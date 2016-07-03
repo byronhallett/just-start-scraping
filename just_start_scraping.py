@@ -255,6 +255,8 @@ class JustStartSraping:
     def output_races(self, races):
 
         for race in races:
+            if race.get_runners() == []:
+                continue
             best_mov = self.best_mov1(race.get_runners())
             # Save all categories
             sorted_runners = {
