@@ -3,3 +3,4 @@ __pycache__/
 *cmd_here*
 *.pyc
 mail.py
+output/

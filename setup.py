@@ -3,6 +3,8 @@ from pathlib import Path
 
 class Settings:
     out_dir = Path('C:/TBE/JSH_Byron/')
+    # out_dir = Path('/Users/byron/developer/just-start-scraping/output')
+
 
 
 def test():
