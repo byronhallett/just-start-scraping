@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 # this app
 from setup import *
 
+__version__ = 'v1.1.0'
+
 
 class Race:
     '''
@@ -473,6 +475,5 @@ class JustStartSraping:
 
 
 if __name__ == "__main__":
-    # import doctest
-    # doctest.testmod()
+    print("current version: {}, {}".format(__version__))
     JustStartSraping().start()
