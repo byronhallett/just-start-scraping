@@ -343,7 +343,7 @@ class JustStartSraping:
         - Time of race
         '''
         for race in races:
-            output_race(race)
+            self.output_race(race)
 
     def output_race(self, race):
 
