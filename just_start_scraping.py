@@ -475,5 +475,5 @@ class JustStartSraping:
 
 
 if __name__ == "__main__":
-    print("current version: {}, {}".format(__version__))
+    print("current version: {}".format(__version__))
     JustStartSraping().start()
