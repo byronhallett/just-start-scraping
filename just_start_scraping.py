@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 # this app
 from setup import *
 
-__version__ = 'v1.1.0'
+__version__ = 'v1.1.1'
 
 
 class Race:
@@ -356,7 +356,7 @@ class JustStartSraping:
         # A bool to check if the mov1 output should take place
         within_mov1_times = (
             race.time >= self.mov1_times[0] and
-            race.time <= self.mov1_times
+            race.time <= self.mov1_times[1]
         )
 
         # A value needed to find the horse whose odds improved the most
@@ -385,8 +385,8 @@ class JustStartSraping:
             # Must also be between the correct times - will be an empty
             # list if not
             'MOV1.csv':
-            [h for h in race.get_runners() if within_mov1_times and
-             h.mov1 == best_mov and h.mov1 >= self.mov1_min]
+            [h for h in race.get_runners() if (within_mov1_times and
+             h.mov1 == best_mov and h.mov1 >= self.mov1_min)]
         }
 
         # Iterate over each of the caterories above
